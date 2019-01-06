@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/DataFramme.iml" filepath="$PROJECT_DIR$/DataFramme.iml" />
+      <module fileurl="file://$PROJECT_DIR$/DataFrameRework.iml" filepath="$PROJECT_DIR$/DataFrameRework.iml" />
     </modules>
   </component>
 </project>
