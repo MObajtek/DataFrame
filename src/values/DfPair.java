@@ -2,6 +2,7 @@ public class DfPair extends Value{
     private int index;
     private Value data;
 
+
     public DfPair(int index, Value data){
         this.index = index;
         this.data = data;
@@ -28,17 +29,26 @@ public class DfPair extends Value{
         return data;
     }
 
+    public Class<? extends Value> getType() {
+        return data.getClass();
+    }
+
     public DfPair copy(){
         return new DfPair(this);
     }
 
     @Override
-    public String toString() {
-        return "DfPair(" +
-                index +
-                "," +
-                data +
-                ')';
+    public String toString(){
+        return "(" + index + "," + data + ")";
+    }
+
+    public String toString(boolean commutator) {
+        if (commutator){
+            return this.toString();
+        }
+        else {
+            return data.toString();
+        }
     }
 
     @Override
@@ -58,7 +68,7 @@ public class DfPair extends Value{
 
     @Override
     public Value div(Value value) {
-        return null;
+        return new DfPair(this.index,this.data.div(value));
     }
 
     @Override
@@ -78,12 +88,12 @@ public class DfPair extends Value{
 
     @Override
     public boolean lte(Value value) {
-        return false;
+        return eq(value);
     }
 
     @Override
     public boolean gte(Value value) {
-        return false;
+        return eq(value);
     }
 
     @Override

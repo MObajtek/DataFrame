@@ -11,42 +11,27 @@ public class DfString extends Value {
     }
 
     @Override
-    public Value add(Value value) {
-        if (value instanceof DfString){
-            return new DfString(this.string + ((DfString) value).getString());
-        }
-        else{
-            return new DfString("null");
-        }
+    public Value add(Value value) {return null;
     }
 
     @Override
     public Value sub(Value value) {
-        return new DfString("null");
+        return null;
     }
 
     @Override
     public Value mul(Value value) {
-        if (value instanceof DfInteger){
-            DfString result = new DfString(this.string);
-            for (int i = 0; i < ((DfInteger) value).getNumber()-1; i++) {
-                result.add(new DfString(this.string));
-            }
-            return result;
-        }
-        else{
-            return new DfString("null");
-        }
+        return null;
     }
 
     @Override
     public Value div(Value value) {
-        return new DfString("null");
+        return null;
     }
 
     @Override
     public Value pow(Value value) {
-        return new DfString("null");
+        return null;
     }
 
     @Override

@@ -6,7 +6,11 @@ public class DfInteger extends Value {
     }
 
     public DfInteger(String string){
-        this.number = java.lang.Integer.parseInt(string);
+        try {
+            this.number = Integer.parseInt(string);
+        } catch (Exception NumberFormatException) {
+            throw new IllegalArgumentException("Invalid Integer format");
+        }
     }
 
     @Override
@@ -19,8 +23,8 @@ public class DfInteger extends Value {
         if (value instanceof DfInteger){
             return new DfInteger(this.number + ((DfInteger)value).getNumber());
         }
-        else if (value instanceof DfDouble){
-            return new DfDouble((double)(this.number) + ((DfDouble)value).getNumber());
+        else if(value instanceof DfDouble){
+            return new DfDouble((double)this.number + ((DfDouble)value).getNumber());
         }
         else if (value instanceof DfFloat){
             return new DfFloat((float)this.number + ((DfFloat)value).getNumber());
@@ -36,7 +40,7 @@ public class DfInteger extends Value {
             return new DfInteger(this.number - ((DfInteger)value).getNumber());
         }
         else if(value instanceof DfDouble){
-            return new DfDouble((double)(this.number) - ((DfDouble)value).getNumber());
+            return new DfDouble((double)this.number - ((DfDouble)value).getNumber());
         }
         else if (value instanceof DfFloat){
             return new DfFloat((float)this.number - ((DfFloat)value).getNumber());
@@ -65,13 +69,13 @@ public class DfInteger extends Value {
     @Override
     public Value div(Value value) {
         if (value instanceof DfInteger){
-            return new DfInteger(this.number / ((DfInteger)value).getNumber());
+            return new DfDouble((double)this.number / ((DfInteger)value).getNumber());
         }
         else if(value instanceof DfDouble){
             return new DfDouble((double)(this.number) / ((DfDouble)value).getNumber());
         }
         else if (value instanceof DfFloat){
-            return new DfFloat((float)this.number / ((DfFloat)value).getNumber());
+            return new DfDouble((double)this.number / ((DfFloat)value).getNumber());
         }
         else{
             throw new IllegalArgumentException("Only Integers or Doubles can be divisors");
@@ -81,13 +85,13 @@ public class DfInteger extends Value {
     @Override
     public Value pow(Value value) {
         if (value instanceof DfInteger){
-            return new DfInteger((int)java.lang.Math.pow(this.number, ((DfInteger)value).getNumber()));
+            return new DfDouble(java.lang.Math.pow(this.number, ((DfInteger)value).getNumber()));
         }
         else if(value instanceof DfDouble){
             return new DfDouble(java.lang.Math.pow(this.number, ((DfDouble)value).getNumber()));
         }
         else if(value instanceof DfFloat){
-            return new DfFloat((float)java.lang.Math.pow(this.number, ((DfFloat)value).getNumber()));
+            return new DfDouble(java.lang.Math.pow(this.number, ((DfFloat)value).getNumber()));
         }
         else{
             throw new IllegalArgumentException("Only a DfInteger, DfFloat or DfDouble can be an exponent");
@@ -181,7 +185,18 @@ public class DfInteger extends Value {
 
     @Override
     public boolean equals(Object other) {
-        return this.eq((Value)other);
+        if (other instanceof DfInteger){
+            return (this.number == ((DfInteger)other).getNumber());
+        }
+        else if(other instanceof DfDouble){
+            return (this.number == ((DfDouble)other).getNumber());
+        }
+        else if (other instanceof DfFloat){
+            return (this.number == ((DfFloat)other).getNumber());
+        }
+        else{
+            return false;
+        }
     }
 
     @Override

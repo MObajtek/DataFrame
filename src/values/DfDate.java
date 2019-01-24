@@ -31,7 +31,8 @@ public class DfDate extends Value {
             this.time = true;
         }
         else{
-            throw new IllegalArgumentException("Invalid date format. Expected yyyy-mm-dd or yyyy-mm-ddThh:mm:ss");
+            throw new IllegalArgumentException("Invalid format. " +
+                    "Expected string in format yyyy-mm-dd or yyyy-mm-ddThh:mm:ss");
         }
     }
 
@@ -58,29 +59,30 @@ public class DfDate extends Value {
                     throw new IllegalArgumentException("Only two dates with the same precision can be added");
                 }
                 else {
-                    this.date.plus(((DfDate) value).getYear(), ChronoUnit.YEARS);
-                    this.date.plus(((DfDate) value).getMonth(), ChronoUnit.MONTHS);
-                    this.date.plus(((DfDate) value).getDay(), ChronoUnit.DAYS);
+                    this.date = this.date.plus(((DfDate) value).getYear(), ChronoUnit.YEARS);
+                    this.date = this.date.plus(((DfDate) value).getMonth(), ChronoUnit.MONTHS);
+                    this.date = this.date.plus(((DfDate) value).getDay(), ChronoUnit.DAYS);
                 }
+                return this;
             }
             else {
                 if (! ((DfDate) value).isTime()){
                     throw new IllegalArgumentException("Only two dates with the same precision can be added");
                 }
                 else {
-                    this.dateTime.plus(((DfDate) value).getYear(), ChronoUnit.YEARS);
-                    this.dateTime.plus(((DfDate) value).getMonth(), ChronoUnit.MONTHS);
-                    this.dateTime.plus(((DfDate) value).getDay(), ChronoUnit.DAYS);
-                    this.dateTime.plus(((DfDate) value).getHour(), ChronoUnit.HOURS);
-                    this.dateTime.plus(((DfDate) value).getMinute(), ChronoUnit.MINUTES);
-                    this.dateTime.plus(((DfDate) value).getSecond(), ChronoUnit.SECONDS);
+                    this.dateTime = this.dateTime.plus(((DfDate) value).getYear(), ChronoUnit.YEARS);
+                    this.dateTime = this.dateTime.plus(((DfDate) value).getMonth(), ChronoUnit.MONTHS);
+                    this.dateTime = this.dateTime.plus(((DfDate) value).getDay(), ChronoUnit.DAYS);
+                    this.dateTime = this.dateTime.plus(((DfDate) value).getHour(), ChronoUnit.HOURS);
+                    this.dateTime = this.dateTime.plus(((DfDate) value).getMinute(), ChronoUnit.MINUTES);
+                    this.dateTime = this.dateTime.plus(((DfDate) value).getSecond(), ChronoUnit.SECONDS);
                 }
+                return this;
             }
         }
         else {
             throw new IllegalArgumentException("Only two dates can be added");
         }
-        return null;
     }
 
     @Override
@@ -91,9 +93,10 @@ public class DfDate extends Value {
                     throw new IllegalArgumentException("Only two dates with the same precision can be added");
                 }
                 else {
-                    this.date.minus(((DfDate) value).getYear(), ChronoUnit.YEARS);
-                    this.date.minus(((DfDate) value).getMonth(), ChronoUnit.MONTHS);
-                    this.date.minus(((DfDate) value).getDay(), ChronoUnit.DAYS);
+                    this.date = this.date.minus(((DfDate) value).getYear(), ChronoUnit.YEARS);
+                    this.date = this.date.minus(((DfDate) value).getMonth(), ChronoUnit.MONTHS);
+                    this.date = this.date.minus(((DfDate) value).getDay(), ChronoUnit.DAYS);
+                    return this;
                 }
             }
             else {
@@ -101,19 +104,19 @@ public class DfDate extends Value {
                     throw new IllegalArgumentException("Only two dates with the same precision can be added");
                 }
                 else {
-                    this.dateTime.minus(((DfDate) value).getYear(), ChronoUnit.YEARS);
-                    this.dateTime.minus(((DfDate) value).getMonth(), ChronoUnit.MONTHS);
-                    this.dateTime.minus(((DfDate) value).getDay(), ChronoUnit.DAYS);
-                    this.dateTime.minus(((DfDate) value).getHour(), ChronoUnit.HOURS);
-                    this.dateTime.minus(((DfDate) value).getMinute(), ChronoUnit.MINUTES);
-                    this.dateTime.minus(((DfDate) value).getSecond(), ChronoUnit.SECONDS);
+                    this.dateTime = this.dateTime.minus(((DfDate) value).getYear(), ChronoUnit.YEARS);
+                    this.dateTime = this.dateTime.minus(((DfDate) value).getMonth(), ChronoUnit.MONTHS);
+                    this.dateTime = this.dateTime.minus(((DfDate) value).getDay(), ChronoUnit.DAYS);
+                    this.dateTime = this.dateTime.minus(((DfDate) value).getHour(), ChronoUnit.HOURS);
+                    this.dateTime = this.dateTime.minus(((DfDate) value).getMinute(), ChronoUnit.MINUTES);
+                    this.dateTime = this.dateTime.minus(((DfDate) value).getSecond(), ChronoUnit.SECONDS);
+                    return this;
                 }
             }
         }
         else {
             throw new IllegalArgumentException("Only two dates can be added");
         }
-        return null;
     }
 
     @Override
@@ -123,7 +126,7 @@ public class DfDate extends Value {
 
     @Override
     public Value div(Value value) {
-        return new DfDate("0000-01-01");
+        return null;
     }
 
     @Override
@@ -148,8 +151,6 @@ public class DfDate extends Value {
             throw new IllegalArgumentException("Only two Dates can be compared");
         }
     }
-
-//    DfDate > '2018-03-27' == "data jest STARSZA niz 2018-03-27
 
     @Override
     public boolean gte(Value value) {
@@ -234,17 +235,30 @@ public class DfDate extends Value {
 
     @Override
     public boolean equals(Object other) {
-        return this.eq((Value)other);
+        if (other instanceof DfDate) {
+            if (this.time && ((DfDate) other).time) {
+                return this.dateTime.isEqual(((DfDate) other).dateTime);
+            }
+            else if (!(this.time && ((DfDate) other).time)){
+                return this.date.isEqual(((DfDate) other).date);
+            }
+            else {
+                throw new IllegalArgumentException("Only two Dates with the same precision can be compared");
+            }
+        }
+        else {
+            return false;
+        }
     }
 
     @Override
     public int hashCode() {
         if (time){
-            return java.lang.Integer.valueOf(this.getDay() * 79 + this.getMonth() * 7 + this.getYear() * 3 +
-                    this.getHour() * 17 + this.getMinute() * 13 + this.getSecond() * 19).hashCode();
+            return java.lang.Integer.valueOf((int)(this.getDay() * 79 + this.getMonth() * 7 + this.getYear() * 3 +
+                    this.getHour() * 17 + this.getMinute() * 13 + this.getSecond() * 19)).hashCode();
         }
         else{
-            return java.lang.Integer.valueOf(this.getDay() * 79 + this.getMonth() * 7 + this.getYear() * 3).hashCode();
+            return java.lang.Integer.valueOf((int)(this.getDay() * 79 + this.getMonth() * 7 + this.getYear() * 3)).hashCode();
         }
     }
 
@@ -253,7 +267,7 @@ public class DfDate extends Value {
         return new DfDate(s);
     }
 
-    private int getDay() {
+    private long getDay() {
         if (time){
             return dateTime.getDayOfMonth();
         }
@@ -262,7 +276,7 @@ public class DfDate extends Value {
         }
     }
 
-    private int getMonth() {
+    private long getMonth() {
         if (time){
             return dateTime.getMonthValue();
         }
@@ -271,7 +285,7 @@ public class DfDate extends Value {
         }
     }
 
-    private int getYear() {
+    private long getYear() {
         if (time){
             return dateTime.getYear();
         }
@@ -280,7 +294,7 @@ public class DfDate extends Value {
         }
     }
 
-    private int getHour() {
+    private long getHour() {
         if (time){
             return dateTime.getHour();
         }
@@ -289,7 +303,7 @@ public class DfDate extends Value {
         }
     }
 
-    private int getMinute() {
+    private long getMinute() {
         if (time){
             return dateTime.getMinute();
         }
@@ -298,7 +312,7 @@ public class DfDate extends Value {
         }
     }
 
-    private int getSecond() {
+    private long getSecond() {
         if (time){
             return dateTime.getSecond();
         }

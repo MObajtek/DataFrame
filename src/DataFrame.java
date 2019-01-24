@@ -1,9 +1,9 @@
+import org.apache.commons.lang3.StringUtils;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-//import org.apache.commons.lang3.StringUtils;
 
 public class DataFrame {
     private ArrayList<Column> columns = new ArrayList<Column>(0);
@@ -86,7 +86,7 @@ public class DataFrame {
 
     }
 
-    private java.lang.Integer size(){
+    public Integer size(){
         try{
             return this.columns.get(0).getSize();
         }
@@ -155,7 +155,7 @@ public class DataFrame {
         return result;
     }
 
-    private boolean addColumn(Column column){
+    public boolean addColumn(Column column){
         try{
             if (!this.columns.get(0).getSize().equals(column.getSize())){
                 throw new IllegalArgumentException("Column size is not compatible with Column sizes in this DataFrame");
@@ -180,7 +180,7 @@ public class DataFrame {
         }
     }
 
-    private Column getColumn(String colname){
+    public Column getColumn(String colname){
         for (Column column: columns){
             if (column.getColname().equals(colname)){
                 return column;
@@ -190,11 +190,14 @@ public class DataFrame {
     }
 
     private void join(DataFrame dataFrame){
+        if (frozen){
+            throw new IllegalStateException("Cannot join/add data to frozen DataFrame");
+        }
         if (this.columns.size() != dataFrame.columns.size()){
             throw new IllegalArgumentException("Cannot join DataFrames of different sizes");
         }
         if (this.columns.size() == 0){
-            throw new IllegalArgumentException("Cannot join empty DataFrames");
+            throw new IllegalStateException("Cannot join empty DataFrames");
         }
         for (int i = 0; i < this.columns.size(); i++) {
             if (this.columns.get(i).getType() != dataFrame.getColumn(i).getType()){
@@ -208,26 +211,25 @@ public class DataFrame {
         }
     }
 
-/*
     public String toString() {
         StringBuilder result = new StringBuilder();
         try {
             for (int i = 0; i < columns.size(); i++) {
-                result.append(columns.get(i).getColname());
-//                result.append(StringUtils.center(columns.get(i).getColname(),21));
+//                result.append(columns.get(i).getColname());
+                result.append(StringUtils.center(columns.get(i).getColname(),25));
                 if (i < columns.size()-1){
                     result.append("|");
                 }
             }
             result.append("\n");
-//            result.append(StringUtils.repeat("-",22*columns.size()-1));
-            result.append("------------------------------------------------------------------");
+            result.append(StringUtils.repeat("-",26*columns.size()-1));
+//            result.append("------------------------------------------------------------------");
             result.append("\n");
             for (int i = 0; i < columns.get(0).getSize(); i++) {
                 StringBuilder row = new StringBuilder();
                 for (int j = 0; j < columns.size(); j++) {
-                    result.append(this.columns.get(j).getData().get(i).toString());
-//                    result.append(StringUtils.center(this.columns.get(j).getData().get(i).toString(),21));
+//                    result.append(this.columns.get(j).getData().get(i).toString());
+                    result.append(StringUtils.center(this.columns.get(j).getData().get(i).toString(),25));
                     if (j < columns.size()-1){
                         result.append("|");
                     }
@@ -239,7 +241,6 @@ public class DataFrame {
             throw new IllegalStateException("DataFrame is empty");
         }
     }
-*/
 
 // Drukuje n pierwszych rekordów
     public String toString(int n) {
@@ -275,24 +276,24 @@ public class DataFrame {
 
     public DfMap groupby(String[] colnames){
         DfMap result = new DfMap();
-        // TODO: wstaw ponizej try/catch (indexoutofbounds)
-        for (int i = 0; i < columns.get(0).getData().size(); i++) {
-            ArrayList<Value> tmp = new ArrayList<>();
-            for (int j = 0; j < colnames.length; j++    ) {
-                tmp.add(this.getColumn(colnames[j]).getData().get(i));
+        try {
+            for (int i = 0; i < columns.get(0).getData().size(); i++) {
+                ArrayList<Value> tmp = new ArrayList<>();
+                for (int j = 0; j < colnames.length; j++    ) {
+                    tmp.add(this.getColumn(colnames[j]).getData().get(i));
+                }
+                if (result.map.containsKey(tmp)){
+                    result.map.get(tmp).join(this.iloc(i));
+                }
+                else {
+                    result.map.put(tmp,iloc(i));
+                }
             }
-            if (result.map.containsKey(tmp)){
-                result.map.get(tmp).join(this.iloc(i));
-            }
-            else {
-                result.map.put(tmp,iloc(i));
-            }
+            return result;
+        } catch (Exception IndexOutOfBoundsException) {
+            throw new IllegalStateException("Cannot execute groupby on empty Dataframe");
         }
-        return result;
     }
-
-
-
 
     public class DfMap implements Groupby{
         private HashMap<ArrayList<Value>,DataFrame> map;
@@ -308,15 +309,20 @@ public class DataFrame {
                 result.addColumn(new Column(columns.get(i).getColname(),columns.get(i).getType()));
             }
             for(Map.Entry<ArrayList<Value>, DataFrame> entry : map.entrySet()) {
-                // TODO: SPRÓBUJ ZOPTYMALIZOWAĆ PONIŻSZEGO FOR'A - niepotrzebne szukanie max dla wartosci po ktorych grupujemy
                 for (Column column: entry.getValue().columns){
-                    Value max = column.getData().get(0);
-                    for (int i = 1; i < column.getSize(); i++) {
-                        if (column.getData().get(i).gt(max)) {
-                            max = column.getData().get(i);
+                    boolean exists = false;
+                    for (int i = 0; i < entry.getKey().size(); i++) {
+                        if (column.getData().get(0).equals(entry.getKey().get(i))){
+                            result.getColumn(column.getColname()).addData(column.getData().get(0));
+                            exists = true;
                         }
                     }
-                    result.getColumn(column.getColname()).addData(max);
+                    if (exists){
+                        continue;
+                    }
+                    else {
+                        result.getColumn(column.getColname()).addData(column.max());
+                    }
                 }
             }
             return result;
@@ -329,15 +335,20 @@ public class DataFrame {
                 result.addColumn(new Column(columns.get(i).getColname(),columns.get(i).getType()));
             }
             for(Map.Entry<ArrayList<Value>, DataFrame> entry : map.entrySet()) {
-                // TODO: SPRÓBUJ ZOPTYMALIZOWAĆ PONIŻSZEGO FOR'A - niepotrzebne szukanie min dla wartosci po ktorych grupujemy
                 for (Column column: entry.getValue().columns){
-                    Value min = column.getData().get(0);
-                    for (int i = 1; i < column.getSize(); i++) {
-                        if (column.getData().get(i).lt(min)) {
-                            min = column.getData().get(i);
+                    boolean exists = false;
+                    for (int i = 0; i < entry.getKey().size(); i++) {
+                        if (column.getData().get(0).equals(entry.getKey().get(i))){
+                            result.getColumn(column.getColname()).addData(column.getData().get(0));
+                            exists = true;
                         }
                     }
-                    result.getColumn(column.getColname()).addData(min);
+                    if (exists){
+                        continue;
+                    }
+                    else {
+                        result.getColumn(column.getColname()).addData(column.min());
+                    }
                 }
             }
             return result;
@@ -350,20 +361,108 @@ public class DataFrame {
                 result.addColumn(new Column(columns.get(i).getColname(),columns.get(i).getType()));
             }
             for(Map.Entry<ArrayList<Value>, DataFrame> entry : map.entrySet()) {
-                // TODO: SPRÓBUJ ZOPTYMALIZOWAĆ PONIŻSZEGO FOR'A - niepotrzebne szukanie min dla wartosci po ktorych grupujemy
                 for (Column column : entry.getValue().columns) {
-                    if (!(column.getType() == DfDouble.class ||
-                            column.getType() == DfInteger.class ||
-                            column.getType() == DfFloat.class)) {
-                        result.getColumn(column.getColname()).addData(column.getData().get(0).div(new DfInteger(0)));
+                    boolean exists = false;
+                    for (int i = 0; i < entry.getKey().size(); i++) {
+                        if (column.getData().get(0).equals(entry.getKey().get(i))){
+                            result.getColumn(column.getColname()).addData(column.getData().get(0));
+                            exists = true;
+                        }
+                    }
+                    if (exists){
+                        continue;
+                    }
+                    else if(column.getData().get(0).div(new DfInteger(0)) == null){
+                        if (result.getColumn(column.getColname()).getData().isEmpty()) {
+                            result.getColumn(column.getColname()).setType(DfString.class);
+                        }
+                        result.getColumn(column.getColname()).addData("null");
                     }
                     else {
                         Value sum = column.getData().get(0);
                         for (int i = 1; i < column.getSize(); i++) {
-//                        System.out.println(sum);
                             sum = sum.add(column.getData().get(i));
                         }
                         sum = sum.div(new DfInteger(column.getSize()));
+                        if (result.getColumn(column.getColname()).getData().isEmpty()) {
+                            result.getColumn(column.getColname()).setType(DfDouble.class);
+                        }
+                        result.getColumn(column.getColname()).addData(sum);
+                    }
+                }
+            }
+            return result;
+
+
+        }
+
+        @Override
+        public DataFrame std() {
+            DataFrame result = new DataFrame();
+            for (int i = 0; i < columns.size(); i++) {
+                result.addColumn(new Column(columns.get(i).getColname(),columns.get(i).getType()));
+            }
+            for(Map.Entry<ArrayList<Value>, DataFrame> entry : map.entrySet()) {
+                for (Column column : entry.getValue().columns) {
+                    boolean exists = false;
+                    for (int i = 0; i < entry.getKey().size(); i++) {
+                        if (column.getData().get(0).equals(entry.getKey().get(i))){
+                            result.getColumn(column.getColname()).addData(column.getData().get(0));
+                            exists = true;
+                        }
+                    }
+                    if (exists){
+                        continue;
+                    }
+                    else if(column.getData().get(0).div(new DfInteger(0)) == null){
+                        if (result.getColumn(column.getColname()).getData().isEmpty()) {
+                            result.getColumn(column.getColname()).setType(DfString.class);
+                        }
+                        result.getColumn(column.getColname()).addData("null");
+                    }
+                    else {
+                        if (result.getColumn(column.getColname()).getData().isEmpty()) {
+                            result.getColumn(column.getColname()).setType(DfDouble.class);
+                        }
+                        result.getColumn(column.getColname()).addData(column.std());
+                    }
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public DataFrame sum() {
+            DataFrame result = new DataFrame();
+            for (int i = 0; i < columns.size(); i++) {
+                result.addColumn(new Column(columns.get(i).getColname(),columns.get(i).getType()));
+            }
+            for(Map.Entry<ArrayList<Value>, DataFrame> entry : map.entrySet()) {
+                for (Column column : entry.getValue().columns) {
+                    boolean exists = false;
+                    for (int i = 0; i < entry.getKey().size(); i++) {
+                        if (column.getData().get(0).equals(entry.getKey().get(i))){
+                            result.getColumn(column.getColname()).addData(column.getData().get(0));
+                            exists = true;
+                        }
+                    }
+                    if (exists){
+                        continue;
+                    }
+                    else if(column.getData().get(0).add(new DfInteger(0)) == null){
+                        if (result.getColumn(column.getColname()).getData().isEmpty()) {
+                            result.getColumn(column.getColname()).setType(DfString.class);
+                        }
+                        result.getColumn(column.getColname()).addData("null");
+                    }
+                    else {
+                        Value sum = column.getData().get(0);
+                        for (int i = 1; i < column.getSize(); i++) {
+                            sum = sum.add(column.getData().get(i));
+                        }
+                        if (result.getColumn(column.getColname()).getData().isEmpty()) {
+                            result.getColumn(column.getColname()).setType(sum.getClass());
+                        }
                         result.getColumn(column.getColname()).addData(sum);
                     }
                 }
@@ -372,26 +471,53 @@ public class DataFrame {
         }
 
         @Override
-        public DataFrame std() {
-            return null;
-        }
-
-        @Override
-        public DataFrame sum() {
-            return null;
-        }
-
-        @Override
         public DataFrame var() {
-            return null;
+            DataFrame result = new DataFrame();
+            for (int i = 0; i < columns.size(); i++) {
+                result.addColumn(new Column(columns.get(i).getColname(),columns.get(i).getType()));
+            }
+            for(Map.Entry<ArrayList<Value>, DataFrame> entry : map.entrySet()) {
+                for (Column column : entry.getValue().columns) {
+                    boolean exists = false;
+                    for (int i = 0; i < entry.getKey().size(); i++) {
+                        if (column.getData().get(0).equals(entry.getKey().get(i))){
+                            result.getColumn(column.getColname()).addData(column.getData().get(0));
+                            exists = true;
+                        }
+                    }
+                    if (exists){
+                        continue;
+                    }
+                    else if(column.getData().get(0).div(new DfInteger(0)) == null){
+                        if (result.getColumn(column.getColname()).getData().isEmpty()) {
+                            result.getColumn(column.getColname()).setType(DfString.class);
+                        }
+                        result.getColumn(column.getColname()).addData("null");
+                    }
+                    else {
+                        if (result.getColumn(column.getColname()).getData().isEmpty()) {
+                            result.getColumn(column.getColname()).setType(DfDouble.class);
+                        }
+                        result.getColumn(column.getColname()).addData(column.var());
+                    }
+                }
+            }
+            return result;
         }
 
         @Override
-        public DataFrame apply(Applyable action) {
-            return null;
+        public DataFrame apply(Applyable applyable) {
+            DataFrame result = new DataFrame();
+            for (int i = 0; i < columns.size(); i++) {
+                result.addColumn(new Column(columns.get(i).getColname(),columns.get(i).getType()));
+            }
+            for(Map.Entry<ArrayList<Value>, DataFrame> entry : map.entrySet()) {
+                result.join(applyable.apply(entry.getValue()));
+            }
+            return result;
         }
 
-/*        @Override
+        @Override
         public String toString() {
             StringBuilder result = new StringBuilder();
             for(Map.Entry<ArrayList<Value>, DataFrame> entry : map.entrySet()) {
@@ -401,7 +527,7 @@ public class DataFrame {
                 result.append("\n-------------------------\n");
             }
             return result.toString();
-        }*/
+        }
     }
 
     public boolean isFrozen() {
